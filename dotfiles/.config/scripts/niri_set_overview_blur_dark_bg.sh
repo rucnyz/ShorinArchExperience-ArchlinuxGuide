@@ -5,17 +5,8 @@
 # ==============================================================================
 
 # --- 核心设置 ---
-# 可选: "swww" 或 "swaybg"
-WALLPAPER_BACKEND="swww" 
-
-# [SWWW 专用] 参数
-SWWW_ARGS="-n overview --transition-type fade --transition-duration 0.5"
-
-# [Swaybg 专用] 填充模式 (fill, fit, center, tile)
-SWAYBG_MODE="fill"
-
-# [Waypaper] 配置文件路径 (用于当 backend 为 swaybg 时获取当前壁纸)
-WAYPAPER_CONFIG="$HOME/.config/waypaper/config.ini"
+WALLPAPER_BACKEND="swww"
+DAEMON_ARGS="-n overview"
 
 # --- ImageMagick 参数 ---
 IMG_BLUR_STRENGTH="0x15"
@@ -28,57 +19,38 @@ CACHE_SUBDIR_NAME="niri-overview-blur-dark"
 LINK_NAME="cache-niri-overview-blur-dark"
 
 # --- 自动预生成与清理配置 ---
-AUTO_PREGEN="true"                # true/false：是否在后台进行维护
+AUTO_PREGEN="true"               # true/false：是否在后台进行维护
 ORPHAN_CACHE_LIMIT=10            # 允许保留多少个“非重要壁纸”的缓存
 
 # [关键配置] 重要壁纸目录
+# 只有在这个目录根下的图片才会被加入白名单保护。
+# 子目录里的图片不算“重要壁纸”。
 WALL_DIR="$HOME/Pictures/Wallpapers"
 
 # ==============================================================================
 # 2. 依赖与输入检查
 # ==============================================================================
 
-DEPENDENCIES=("magick" "notify-send")
-# 只有当后端是 swww 时才强制检查 swww，swaybg 同理
-if [ "$WALLPAPER_BACKEND" == "swww" ]; then
-    DEPENDENCIES+=("swww")
-    # 增加 niri 依赖检查，因为后续需要用到 niri msg
-    DEPENDENCIES+=("niri")
-elif [ "$WALLPAPER_BACKEND" == "swaybg" ]; then
-    DEPENDENCIES+=("swaybg")
-fi
+DEPENDENCIES=("magick" "notify-send" "$WALLPAPER_BACKEND")
 
 for cmd in "${DEPENDENCIES[@]}"; do
     if ! command -v "$cmd" &> /dev/null; then
-        notify-send -u critical "Blur Error" "缺少依赖: $cmd，请检查是否安装"
+        notify-send -u critical "Blur Error" "缺少依赖: $cmd，请检查是否安装imagemagick"
         exit 1
     fi
 done
 
 INPUT_FILE="$1"
 
-# === 自动获取当前壁纸逻辑 (修改部分) ===
+# 自动获取当前壁纸（若未指定）
 if [ -z "$INPUT_FILE" ]; then
-    # 策略 1: 尝试从 swww query 获取 (最准确，如果正在运行 swww)
-    if command -v swww &> /dev/null && swww query &> /dev/null; then
-        INPUT_FILE=$(swww query | head -n1 | grep -oP 'image: \K.*')
+    if command -v "$WALLPAPER_BACKEND" &> /dev/null; then
+        INPUT_FILE=$("$WALLPAPER_BACKEND" query 2>/dev/null | head -n1 | grep -oP 'image: \K.*')
     fi
-
-    # 策略 2: 如果 swww 没拿到，且配置文件指向 waypaper，尝试读取 waypaper 配置
-    if [ -z "$INPUT_FILE" ] && [ -f "$WAYPAPER_CONFIG" ]; then
-        # 读取 ini 文件中的 wallpaper = /path/to/img 字段
-        # 使用 grep 和 cut 提取，xargs 去除空格
-        INPUT_FILE=$(grep "^wallpaper =" "$WAYPAPER_CONFIG" | cut -d '=' -f2 | xargs)
-        # 处理可能的波浪号 ~ 路径
-        INPUT_FILE="${INPUT_FILE/#\~/$HOME}"
-    fi
-    
-    # 策略 3 (可选): 也可以尝试 awww query
-    # if [ -z "$INPUT_FILE" ] && command -v awww &> /dev/null; then ...
 fi
 
 if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
-    notify-send "Blur Error" "无法自动获取当前壁纸 (尝试了 swww query 和 waypaper config)。请手动指定路径。"
+    notify-send "Blur Error" "无法获取输入图片 (swww query 无返回)，请手动指定路径。"
     exit 1
 fi
 
@@ -88,12 +60,14 @@ if [ -z "$WALL_DIR" ] || [ ! -d "$WALL_DIR" ]; then
 fi
 
 # ==============================================================================
-# 3. 路径与链接逻辑 (保持不变)
+# 3. 路径与链接逻辑
 # ==============================================================================
 
+# A. 准备真实缓存目录
 REAL_CACHE_DIR="$REAL_CACHE_BASE/$CACHE_SUBDIR_NAME"
 mkdir -p "$REAL_CACHE_DIR"
 
+# B. 准备软链接
 WALLPAPER_DIR=$(dirname "$INPUT_FILE")
 SYMLINK_PATH="$WALLPAPER_DIR/$LINK_NAME"
 
@@ -105,6 +79,7 @@ if [ ! -L "$SYMLINK_PATH" ] || [ "$(readlink -f "$SYMLINK_PATH")" != "$REAL_CACH
     fi
 fi
 
+# C. 定义文件名和前缀
 FILENAME=$(basename "$INPUT_FILE")
 SAFE_OPACITY="${IMG_COLORIZE_STRENGTH%\%}"
 SAFE_COLOR="${IMG_FILL_COLOR#\#}"
@@ -114,7 +89,7 @@ BLUR_FILENAME="${PARAM_PREFIX}${FILENAME}"
 FINAL_IMG_PATH="$REAL_CACHE_DIR/$BLUR_FILENAME"
 
 # ==============================================================================
-# 4. 后台维护功能 (保持不变)
+# 4. 后台维护功能 (清理 + 预生成)
 # ==============================================================================
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 
@@ -129,6 +104,9 @@ run_maintenance_in_background() {
     local current_cache_target="$2"
     
     (
+        # === A. 清理逻辑 (Smart Clean) ===
+        # 1. 建立白名单：只扫描 WALL_DIR 根目录 (-maxdepth 1)
+        # 子目录里的图片不会被加入白名单 -> 它们的缓存会被视为“孤儿” -> 最终被清理
         declare -A active_wallpapers
         local whitelist_count=0
         
@@ -138,14 +116,19 @@ run_maintenance_in_background() {
             whitelist_count=$((whitelist_count + 1))
         done < <(find -L "$WALL_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0)
 
+        # 2. 扫描缓存，找出孤儿
         local orphan_list=$(mktemp)
         local orphan_count=0
         
+        # 仅扫描当前参数前缀的缓存文件
         while IFS= read -r -d '' cache_file; do
             local cache_name="${cache_file##*/}"
             local original_name="${cache_name#${PARAM_PREFIX}}"
             
+            # 逻辑判断：
+            # 1. 如果源图不在白名单里（比如它是子目录里的图，或者是已删除的图）
             if [[ -z "${active_wallpapers[$original_name]}" ]]; then
+                # 2. 绝对保护：哪怕它不在白名单，只要是当前正在用的，就坚决不删
                 if [[ "$cache_file" != "$current_cache_target" ]]; then
                     echo "$cache_file" >> "$orphan_list"
                     orphan_count=$((orphan_count + 1))
@@ -153,14 +136,18 @@ run_maintenance_in_background() {
             fi
         done < <(find "$REAL_CACHE_DIR" -maxdepth 1 -name "${PARAM_PREFIX}*" -print0)
 
+        # 3. 执行删除 (只删除超量的孤儿)
         if [[ "$orphan_count" -gt "$ORPHAN_CACHE_LIMIT" ]]; then
             local delete_count=$((orphan_count - ORPHAN_CACHE_LIMIT))
+            # 按访问时间排序删除最旧的
             xargs -a "$orphan_list" ls -1tu | tail -n "$delete_count" | while read -r dead_file; do
                 rm -f "$dead_file"
             done
         fi
         rm -f "$orphan_list"
 
+        # === B. 预生成逻辑 (Pre-Gen) ===
+        # 同样只为白名单里的图片（根目录图片）预生成缓存
         local total=0
         while IFS= read -r -d '' img; do
             [[ -n "$current_img" && "$img" == "$current_img" ]] && continue
@@ -183,49 +170,19 @@ run_maintenance_in_background() {
 }
 
 # ==============================================================================
-# 5. 生成与应用函数 (修改部分)
+# 5. 生成与应用函数
 # ==============================================================================
 
 apply_wallpaper() {
     local img_path="$1"
     
+    # 只要命中了缓存，更新访问时间
     touch -a "$img_path"
 
-    if [ "$WALLPAPER_BACKEND" == "swww" ]; then
-        # === [新增] 检测 daemon overview layer 是否存在 ===
-        # 使用 grep -qE 同时匹配 swww-daemonoverview 或 awww-daemonoverview
-        if ! niri msg layers | grep -qE "(swww-daemonoverview|awww-daemonoverview)"; then
-            # 如果 layer 不存在，启动 daemon
-            # 优先检查 swww-daemon，如果不存在则检查 awww-daemon
-            if command -v swww-daemon &> /dev/null; then
-                swww-daemon -n overview &
-            elif command -v awww-daemon &> /dev/null; then
-                awww-daemon -n overview &
-            fi
-            
-            # 等待一小会儿确保 socket 就绪
-            sleep 0.5
-        fi
-        
-        # SWWW 逻辑
-        swww img $SWWW_ARGS "$img_path" &
-        
-    elif [ "$WALLPAPER_BACKEND" == "swaybg" ]; then
-        # Swaybg 逻辑
-        # 1. 以后台模式启动新的 swaybg
-        # 注意：swaybg 不像 swww 那样支持热重载，通常需要先启动新的覆盖，再杀旧的，或者先杀再启
-        # 这里采用先杀再启的简单策略，可能会有极短暂的闪烁，但逻辑最稳
-        
-        # 杀死现有的 swaybg 实例 (忽略报错如果没运行)
-        pkill -x swaybg || true
-        
-        # 启动新的
-        swaybg -i "$img_path" -m "$SWAYBG_MODE" &
-        
-        # 另一种平滑策略（如果支持）：先启动新的，等待一会，再杀旧的。
-        # 但 swaybg 独占图层，如果不杀旧的，新的可能无法显示或重叠。
-        # 标准做法通常是管理 PID，但 bash 脚本里 pkill 最简单。
-    fi
+    "$WALLPAPER_BACKEND" img $DAEMON_ARGS "$img_path" \
+        --transition-type fade \
+        --transition-duration 0.5 \
+        & 
 }
 
 # ==============================================================================

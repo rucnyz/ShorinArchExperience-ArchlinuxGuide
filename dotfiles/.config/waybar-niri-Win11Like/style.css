@@ -11,7 +11,7 @@
     border: none;
     border-radius: 5px;
     font-family: "JetBrainsMono NFP","LXGW WenKai Screen", "JetBrains Maple Mono";
-    font-size: 15px; /* 1em（基准） */
+    font-size: 18px; /* 1em（基准） */
     min-height: 0;
 }
 
@@ -30,21 +30,24 @@ tooltip {
 tooltip label {
     color: @on_surface;
     font-size: 0.89em; /* 原 16px */
+    font-weight: 300;
 }
 
 #workspaces {
-    background-color: @surface_container_high;
-    padding: 0px 5px;
+    background-color: transparent;
+    padding: 0px;
     margin: 5px;
 }
 
 #workspaces button {
     padding: 0px 10px;
-    color: @tertiary_container;
+    margin: 0px 2px;
+    color: @workspace_fg;
+    background-color: @surface_container_high;
 }
 
 /* #workspaces label {
-    font-size: 1.11em; 原 20px 
+    font-size: 1.11em; 原 20px
 } */
 
 #workspaces button:hover {
@@ -52,8 +55,14 @@ tooltip label {
 }
 
 #workspaces button.active {
-    color: @tertiary;
+    background: @primary_fixed_dim;
 }
+
+/* taskbar 中聚焦窗口的边框 */
+.taskbar-window.focused {
+    border-bottom: 4px solid @primary;
+}
+
 
 #mpris,
 #custom-cava {
@@ -309,9 +318,9 @@ window#waybar.empty #window {
     padding: 0px 3px 0px 9px;
 }
 #network {
-    padding: 0px 10px 0px 5px;
-    margin: 5px 5px 5px 0px;
-    border-radius: 0px 5px 5px 0px;
+    padding: 0px 5px 0px 10px;
+    margin: 5px 0px 5px 5px;
+    border-radius: 5px 0px 0px 5px;
 }
 
 
@@ -325,9 +334,9 @@ window#waybar.empty #window {
     font-size:1.1em;
 }
 #idle_inhibitor {
-    padding: 0px 5px 0px 10px;
-    margin: 5px 0px 5px 5px;
-    border-radius: 5px 0px 0px 5px;
+    padding: 0px 5px 0px 5px;
+    margin: 5px 0px 5px 0px;
+    border-radius: 0px;
     color: @tertiary;
 }
 #idle_inhibitor.activated{
@@ -412,4 +421,17 @@ window#waybar.empty #window {
 #custom-logout {
     margin: 8px 0px 8px 0px;
     border-radius: 0px;
+}
+
+/* 堆叠窗口指示 */
+.taskbar-window.stacked {
+    border: 1px dashed @tertiary;
+    border-radius: 3px;
+}
+
+/* 堆叠窗口同时聚焦时 */
+.taskbar-window.stacked.focused {
+    border: 1px dashed @tertiary;
+    border-bottom: 4px solid @primary;
+    border-radius: 3px;
 }

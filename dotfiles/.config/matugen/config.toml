@@ -89,10 +89,10 @@ input_path = '~/.config/matugen/templates/hyprland-colors.conf'
 output_path = '~/.config/hypr/colors.conf'
 post_hook = 'hyprctl reload &'
 
-#[templates.niriswitcher]
-#input_path = '~/.config/matugen/templates/niriswitcher-colors.css'
-#output_path = '~/.config/niriswitcher/style.css'
-#post_hook= 'pkill niriswitcher || true && niriswitcher & disown'
+[templates.niriswitcher]
+input_path = '~/.config/matugen/templates/niriswitcher-colors.css'
+output_path = '~/.config/niriswitcher/style.css'
+post_hook= 'pkill niriswitcher || true && niriswitcher & disown'
 
 [templates.niri]
 input_path = '~/.config/matugen/templates/niri-colors.kdl'
@@ -119,8 +119,8 @@ output_path = '~/.config/fastfetch/config.jsonc'
 #[templates.neovim]
 #input_path = '~/.config/matugen/templates/neovim/template.lua'
 #output_path = '~/.config/nvim/generated.lua'
-#post_hook = 'pkill -SIGUSR1 nvim'
 
+#post_hook = 'pkill -SIGUSR1 nvim'
 [templates.hyprlock]
 input_path = '~/.config/matugen/templates/hyprland-colors.conf'
 output_path = '~/.config/hypr/colors.conf'

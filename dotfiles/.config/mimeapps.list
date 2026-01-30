@@ -12,8 +12,17 @@ video/mp4=mpv.desktop
 video/x-matroska=mpv.desktop
 video/avi=mpv.desktop
 video/quicktime=mpv.desktop
-text/plain=vim.desktop
+text/plain=micro.desktop
 application/vnd.microsoft.portable-executable=wine.desktop
+text/html=microsoft-edge.desktop
+x-scheme-handler/http=microsoft-edge.desktop
+x-scheme-handler/https=microsoft-edge.desktop
+x-scheme-handler/about=microsoft-edge.desktop
+x-scheme-handler/unknown=microsoft-edge.desktop
+x-scheme-handler/jetbrains=jetbrains-toolbox.desktop
+x-scheme-handler/clash=clash-verge.desktop;
+x-scheme-handler/clash-verge=clash-verge.desktop;
+x-scheme-handler/tonsite=org.telegram.desktop.desktop
 
 [Added Associations]
 image/png=imv.desktop;
@@ -22,3 +31,6 @@ application/x-shellscript=vim.desktop;
 video/mp4=mpv.desktop;
 text/plain=vim.desktop;
 application/vnd.microsoft.portable-executable=wine.desktop;
+x-scheme-handler/clash=clash-verge.desktop;
+x-scheme-handler/clash-verge=clash-verge.desktop;
+x-scheme-handler/tonsite=org.telegram.desktop.desktop;

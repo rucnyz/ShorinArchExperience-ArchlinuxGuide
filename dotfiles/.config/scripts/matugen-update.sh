@@ -59,12 +59,10 @@ if [ "$MODE" == "light" ]; then
 
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
     gsettings set org.gnome.desktop.interface color-scheme "prefer-light"
-    gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3-dark"
-    gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk"
+    gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3"
 else
     # === 目标：暗色 ===
     gsettings set org.gnome.desktop.interface color-scheme "prefer-light"
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
-    gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk"
     gsettings set org.gnome.desktop.interface gtk-theme "adw-gtk3-dark"
 fi

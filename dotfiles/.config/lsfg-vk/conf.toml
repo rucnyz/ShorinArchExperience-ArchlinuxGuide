@@ -1,12 +1,31 @@
 version = 1
-
 [global]
-no_fp16 = false
+# override the location of Lossless Scaling
+# dll = "/games/Lossless Scaling/Lossless.dll"
 
-[[game]]
-exe = "miyu"
-multiplier = 2
-flow_scale = 1.0
+# [[game]] # example entry
+# exe = "Game.exe"
+#
+# multiplier = 3
+# flow_scale = 0.7
+# performance_mode = true
+# hdr_mode = false
+#
+# experimental_present_mode = "fifo"
+
+[[game]] # default vkcube entry
+exe = "vkcube"
+
+multiplier = 4
 performance_mode = true
-hdr_mode = false
-experimental_present_mode = "fifo"
+
+[[game]] # default benchmark entry
+exe = "benchmark"
+
+multiplier = 4
+performance_mode = false
+
+[[game]] # override Genshin Impact
+exe = "Genshin"
+
+multiplier = 3

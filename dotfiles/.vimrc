@@ -22,11 +22,14 @@ set ignorecase
 set smartcase
 " 开启持久化撤销（undo），即使关闭再打开文件，也能撤销之前的更改
 set undofile
+
 " undo目录
 silent !mkdir -p ~/.cache/vim/undo
 set undodir=~/.cache/vim/undo
+
 " 剪贴板 gvim的功能
 set clipboard=unnamedplus
+
 " 接管鼠标事件
 set mouse=a
 

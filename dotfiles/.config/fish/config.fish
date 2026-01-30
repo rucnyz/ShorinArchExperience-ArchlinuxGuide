@@ -2,7 +2,7 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 set fish_greeting ""
-set -p PATH ~/.local/bin
+
 starship init fish | source
 zoxide init fish --cmd cd | source
 
@@ -16,13 +16,11 @@ function y
 end
 
 function ls
-	command eza --icons $argv
+	command eza $argv
 end
 
 
 thefuck --alias | source
-# 小黄鸭补帧 需要steam安装正版小黄鸭
-abbr lsfg 'LSFG_PROCESS="miyu"'
 # fa运行fastfetch
 abbr fa fastfetch
 # f运行带二次元美少女的fastfetch
@@ -40,18 +38,20 @@ function 更新
 	sysup 
 end
 function 清理
-	command clean $argv
+	command yay -Scc 
 end
-
 function 安装
-	command pac $argv
+	command yay -S $argv
 end
 function 卸载
-	command par $argv
+	command yay -Rns $argv
+end
+function clean
+	command yay -Scc 
 end
 function install
-	command pac $argv
+	command yay -S $argv
 end
 function remove 
-	command pacr $argv
+	command yay -Rns $argv
 end

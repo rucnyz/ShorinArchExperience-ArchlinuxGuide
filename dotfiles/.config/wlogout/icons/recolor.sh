@@ -15,7 +15,7 @@ DEST_DIR="$HOME/.config/wlogout/icons"
 
 # 1. 获取目标颜色参数
 # 我们期望在运行脚本时传入颜色，例如: ./recolor_icons.sh "#ff0000"
-TARGET_COLOR="#dcc66e"
+TARGET_COLOR="#6e5e0e"
 
 # 检查是否提供了颜色参数
 if [ -z "$TARGET_COLOR" ]; then

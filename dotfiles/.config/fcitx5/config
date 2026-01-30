@@ -11,7 +11,7 @@ EnumerateSkipFirst=False
 ModifierOnlyKeyTimeout=250
 
 [Hotkey/TriggerKeys]
-0=Control+space
+0=Alt+Shift+Shift_L
 1=Zenkaku_Hankaku
 2=Hangul
 
@@ -25,10 +25,10 @@ ModifierOnlyKeyTimeout=250
 0=Shift_L
 
 [Hotkey/EnumerateGroupForwardKeys]
-0=Super+space
+0=
 
 [Hotkey/EnumerateGroupBackwardKeys]
-0=Shift+Super+space
+0=
 
 [Hotkey/PrevPage]
 0=Up
@@ -51,7 +51,7 @@ ActiveByDefault=False
 # 重新聚焦时重置状态
 resetStateWhenFocusIn=No
 # 共享输入状态
-ShareInputState=No
+ShareInputState=All
 # 在程序中显示预编辑文本
 PreeditEnabledByDefault=True
 # 切换输入法时显示输入法信息
@@ -63,7 +63,7 @@ CompactInputMethodInformation=True
 # 显示第一个输入法的信息
 ShowFirstInputMethodInformation=True
 # 默认页大小
-DefaultPageSize=5
+DefaultPageSize=8
 # 覆盖 XKB 选项
 OverrideXkbOption=False
 # 自定义 XKB 选项
@@ -77,7 +77,7 @@ PreloadInputMethod=True
 # 允许在密码框中使用输入法
 AllowInputMethodForPassword=False
 # 输入密码时显示预编辑文本
-ShowPreeditForPassword=False
+ShowPreeditForPassword=True
 # 保存用户数据的时间间隔（以分钟为单位）
 AutoSavePeriod=30
 

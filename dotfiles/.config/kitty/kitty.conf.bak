@@ -1,13 +1,12 @@
 include themes/matugen.conf
 window_padding_width 5
 hide_window_decorations yes
-background_opacity 0.8
-font_family Adwaita Mono
+background_opacity 0.9
+font_family JetBrains Maple Mono
 font_size 15
 remember_window_size no
 confirm_os_window_close 0
-shell /usr/bin/fish
+shell zsh
 cursor_trail 1 
 cursor_shape block
 shell_integration no-cursor
-

@@ -33,12 +33,7 @@ window-rule {
     // This app-id regular expression will work for both:
     // - host Firefox (app-id is "firefox")
     // - Flatpak Firefox (app-id is "org.mozilla.firefox")
-
-    match app-id="media_info"
-    match app-id="video2gif"
-    match app-id="floating-term"
     match app-id="nm-connection-editor"
-    match app-id="niri-quick-switch"
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
     match app-id="steam" title="Friends List"
     match app-id="blueberry.py" title="蓝牙"
@@ -63,22 +58,11 @@ window-rule {
     match title="另存为"
     open-floating true
 }
-//快速终端和笔记
-window-rule {
-    match app-id="notebook"
-    match app-id="quickterminal"
-	open-floating true
-	default-floating-position x=20 y=20 relative-to="top"
-}
 window-rule{
     match app-id="bluetui"
-    min-width 500 
-    min-height 600
-	open-floating true
-}
-window-rule {
-	    match app-id="clipse"
-	min-height 600
+	match app-id="clipse"
+    min-width 600 
+    min-height 750
 	open-floating true
 }
     // waydroid调整
@@ -145,3 +129,10 @@ window-rule {
     // Use this instead if you want them visible on third-party screenshot tools.
     // block-out-from "screencast"
 }
+
+// JetBrains IDE 半透明
+window-rule {
+    match app-id=r#"^jetbrains-"#
+    opacity 0.95
+}
+

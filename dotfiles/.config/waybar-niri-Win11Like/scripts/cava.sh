@@ -11,7 +11,7 @@ echo "
 [general]
 framerate = 24
 sleep_timer = 1   
-bars = 14
+bars = 8
 
 [input]
 method = pulse

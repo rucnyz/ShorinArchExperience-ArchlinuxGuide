@@ -8,20 +8,17 @@ LAST_CLEAR_FILE="/tmp/niri_last_clear_wallpaper"
 PID_FILE="/tmp/niri_auto_blur.pid"
 LINK_NAME="cache-niri-auto-blur-bg"
 
-# --- 核心设置 ---
-# 壁纸后端: "auto" (优先awww), "swww", "awww"
-WALLPAPER_BACKEND="auto"
-
 # --- 行为开关 ---
 OVERVIEW_FORCE_CLEAR="false"
-# 是否开启后台自动维护
+# 是否开启后台自动维护（生成+清理）
 AUTO_MAINTENANCE="true"
-# 维护周期（秒）
+# [新增] 维护周期（秒）：每隔多久扫描一次目录进行清理和补充生成
 MAINTENANCE_INTERVAL=1800
 
-WALL_DIR="$HOME/Pictures/Wallpapers/"
+WALL_DIR="$HOME/Pictures/Wallpapers/"   # ← 确认这里路径是对的
 
-# --- 缓存数量限制 ---
+# --- [配置] 缓存数量限制 ---
+# 允许的“孤儿缓存”数量 (源图已删，但暂时保留缓存的数量)
 ORPHAN_CACHE_LIMIT=10
 
 # --- 浮动窗口例外设置 ---
@@ -39,36 +36,7 @@ WORK_SWITCH_DELAY="0.1"
 mkdir -p "$CACHE_DIR"
 
 # ==============================================================================
-# 2. 后端检测与初始化
-# ==============================================================================
-detect_backend() {
-    if [[ "$WALLPAPER_BACKEND" == "auto" ]]; then
-        if command -v awww &>/dev/null; then
-            WALLPAPER_BACKEND="awww"
-        elif command -v swww &>/dev/null; then
-            WALLPAPER_BACKEND="swww"
-        else
-            echo "Error: Neither 'awww' nor 'swww' found."
-            exit 1
-        fi
-    fi
-    
-    # 验证选定的后端是否存在
-    if ! command -v "$WALLPAPER_BACKEND" &>/dev/null; then
-        echo "Error: Wallpaper backend '$WALLPAPER_BACKEND' not found."
-        exit 1
-    fi
-}
-
-detect_backend
-# 构造设置壁纸的命令字串
-SET_WALL_CMD="$WALLPAPER_BACKEND img --transition-type $ANIM_TYPE --transition-duration $ANIM_DURATION"
-
-log() { echo -e "[$(date '+%H:%M:%S')] $1"; }
-# log "Using backend: $WALLPAPER_BACKEND"
-
-# ==============================================================================
-# 3. 防止重复运行检查
+# 2. 防止重复运行检查
 # ==============================================================================
 if [[ -f "$PID_FILE" ]]; then
     OLD_PID=$(cat "$PID_FILE")
@@ -80,7 +48,7 @@ fi
 echo $$ > "$PID_FILE"
 
 # ==============================================================================
-# 4. 预计算与工具函数
+# 3. 预计算与工具函数
 # ==============================================================================
 if [[ "$ENABLE_DARK" == "true" ]]; then
     SAFE_OPACITY="${DARK_OPACITY%\%}"
@@ -89,15 +57,17 @@ else
     FILE_PREFIX="auto-blur-pure-${BLUR_ARG}-"
 fi
 
+SWWW_CMD="swww img --transition-type $ANIM_TYPE --transition-duration $ANIM_DURATION"
+
 if [[ "$FLOAT_BYPASS_ENABLED" == "true" ]] && ! command -v jq &> /dev/null; then
     FLOAT_BYPASS_ENABLED="false"
 fi
 
+log() { echo -e "[$(date '+%H:%M:%S')] $1"; }
+
 fetch_current_wall() {
     local raw_line
-    # 动态调用 swww query 或 awww query
-    read -r raw_line < <($WALLPAPER_BACKEND query 2>/dev/null)
-    # 两个工具的输出格式通常都是 "Output: image: /path/..."
+    read -r raw_line < <(swww query 2>/dev/null)
     if [[ "$raw_line" =~ image:[[:space:]]*([^[:space:]]+) ]]; then
         _RET_WALL="${BASH_REMATCH[1]}"
     else
@@ -137,47 +107,47 @@ check_floating_bypass() {
 # ==============================================================================
 # X. [常驻后台] 自动维护守护进程
 # ==============================================================================
-MAINTENANCE_PID=""
-
 start_maintenance_daemon() {
     [[ "$AUTO_MAINTENANCE" != "true" ]] && return
 
-    log "Maintenance Daemon: 启动..."
+    log "Maintenance Daemon: 启动... (每 $MAINTENANCE_INTERVAL 秒扫描一次)"
     
     if [[ ! -d "$WALL_DIR" ]]; then
         log "Maintenance: 壁纸目录 $WALL_DIR 不存在，退出维护进程。"
         return
     fi
 
-    (
-        # 延迟启动，避免与主进程争抢 socket
-        sleep 5
+    # 0. 启动时先立即为当前壁纸生成缓存（保证体验）
+    fetch_current_wall
+    local current="$_RET_WALL"
+    local current_base="${current##*/}"
+    local current_target=""
+    [[ -n "$current" ]] && current_target="$CACHE_DIR/${FILE_PREFIX}${current_base}"
 
-        # 0. 启动检查
-        fetch_current_wall
-        local current="$_RET_WALL"
-        local current_base="${current##*/}"
-        local current_target=""
-        [[ -n "$current" ]] && current_target="$CACHE_DIR/${FILE_PREFIX}${current_base}"
-
-        if [[ -n "$current" && ! -f "$current_target" && -f "$current" ]]; then
-            if [[ "$ENABLE_DARK" == "true" ]]; then
-                magick "$current" -blur "$BLUR_ARG" -fill black -colorize "$DARK_OPACITY" "$current_target"
-            else
-                magick "$current" -blur "$BLUR_ARG" "$current_target"
-            fi
+    if [[ -n "$current" && ! -f "$current_target" && -f "$current" ]]; then
+        log "Init: 为当前壁纸生成缓存..."
+        if [[ "$ENABLE_DARK" == "true" ]]; then
+            magick "$current" -blur "$BLUR_ARG" -fill black -colorize "$DARK_OPACITY" "$current_target"
+        else
+            magick "$current" -blur "$BLUR_ARG" "$current_target"
         fi
+        $SWWW_CMD "$current_target" &
+    fi
 
-        # --- 进入无限循环，常驻后台 ---
+    # --- 进入无限循环，常驻后台 ---
+    (
         while true; do
-            # A. 获取当前壁纸
+            # log "Maintenance: 开始新一轮检查..." # 调试时可开启
+
+            # A. 获取当前壁纸（用于保护）
             fetch_current_wall
             local loop_current="$_RET_WALL"
             local loop_current_target=""
             [[ -n "$loop_current" ]] && loop_current_target="$CACHE_DIR/${FILE_PREFIX}${loop_current##*/}"
 
-            # B. 构建“白名单”
+            # B. 构建“白名单”：Wallpapers 目录下的所有现存图片
             declare -A active_wallpapers
+            # 清空数组 (bash 4.0+)
             active_wallpapers=()
             
             while IFS= read -r -d '' file; do
@@ -185,7 +155,7 @@ start_maintenance_daemon() {
                 active_wallpapers["$basename"]=1
             done < <(find "$WALL_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0)
 
-            # C. 扫描缓存目录
+            # C. 扫描缓存目录，找出“孤儿缓存”
             local orphan_list=$(mktemp)
             local orphan_count=0
             
@@ -193,6 +163,7 @@ start_maintenance_daemon() {
                 local cache_name="${cache_file##*/}"
                 local original_name="${cache_name#${FILE_PREFIX}}"
                 
+                # 如果不在白名单里，且不是当前正在用的壁纸
                 if [[ -z "${active_wallpapers[$original_name]}" ]]; then
                     if [[ "$cache_name" != "${loop_current_target##*/}" ]]; then
                         echo "$cache_file" >> "$orphan_list"
@@ -201,9 +172,10 @@ start_maintenance_daemon() {
                 fi
             done < <(find "$CACHE_DIR" -maxdepth 1 -name "${FILE_PREFIX}*" -print0)
 
-            # D. 执行清理
+            # D. 执行清理：孤儿过多时删除最旧的
             if [[ "$orphan_count" -gt "$ORPHAN_CACHE_LIMIT" ]]; then
                 local delete_count=$((orphan_count - ORPHAN_CACHE_LIMIT))
+                # log "Maintenance: 清理 $delete_count 个失效缓存..."
                 if [[ -s "$orphan_list" ]]; then
                     xargs -a "$orphan_list" ls -1tu | tail -n "$delete_count" | while read -r dead_file; do
                         rm -f "$dead_file"
@@ -212,14 +184,19 @@ start_maintenance_daemon() {
             fi
             rm -f "$orphan_list"
 
-            # E. 执行生成
+            # E. 执行生成：补充白名单里缺失的缓存
             for img_name in "${!active_wallpapers[@]}"; do
                 local img="${WALL_DIR}/${img_name}"
                 local target="$CACHE_DIR/${FILE_PREFIX}${img_name}"
 
-                if [[ -f "$target" ]]; then continue; fi
+                # 如果缓存已存在，跳过
+                if [[ -f "$target" ]]; then
+                    continue
+                fi
 
+                # 验证源文件是否存在（防止 find 和 loop 之间的微小时间差）
                 if [[ -f "$img" ]]; then
+                    # log "Maintenance: 生成缺失 -> $img_name"
                     if [[ "$ENABLE_DARK" == "true" ]]; then
                         magick "$img" -blur "$BLUR_ARG" -fill black -colorize "$DARK_OPACITY" "$target"
                     else
@@ -228,16 +205,14 @@ start_maintenance_daemon() {
                 fi
             done
             
-            # F. 休眠
+            # F. 休眠，等待下一轮
             sleep "$MAINTENANCE_INTERVAL"
         done
-    ) & 
-    
-    MAINTENANCE_PID=$!
+    ) &
 }
 
 # ==============================================================================
-# 5. 核心状态管理
+# 5. 核心状态管理 (保持不变)
 # ==============================================================================
 CURRENT_STATE=-1 
 IS_OVERVIEW=false
@@ -247,17 +222,11 @@ _RET_WALL=""
 cleanup() {
     rm -f "$PID_FILE"
     [[ -n "$DEBOUNCE_PID" ]] && kill "$DEBOUNCE_PID" 2>/dev/null
-    
-    if [[ -n "$MAINTENANCE_PID" ]]; then
-        kill "$MAINTENANCE_PID" 2>/dev/null
-    fi
-
     fetch_current_wall
     local cname="${_RET_WALL##*/}"
     if is_blur_filename "$cname" && [[ -f "$LAST_CLEAR_FILE" ]]; then
         local original=$(<"$LAST_CLEAR_FILE")
-        # 退出时恢复无模糊状态，使用后端命令但无过渡
-        [[ -f "$original" ]] && $WALLPAPER_BACKEND img "$original" --transition-type none
+        [[ -f "$original" ]] && swww img "$original" --transition-type none
     fi
     exit 0
 }
@@ -270,7 +239,7 @@ do_restore_task() {
     fetch_current_wall
     local cname="${_RET_WALL##*/}"
     if is_blur_filename "$cname"; then
-        $SET_WALL_CMD "$target"
+        $SWWW_CMD "$target"
     fi
 }
 
@@ -323,7 +292,7 @@ switch_to_blur() {
         touch -a "$target_blur"
     fi
 
-    $SET_WALL_CMD "$target_blur" &
+    $SWWW_CMD "$target_blur" &
 }
 
 force_check_state() {
@@ -338,7 +307,7 @@ force_check_state() {
 # ==============================================================================
 # 6. 主循环
 # ==============================================================================
-log "Daemon Started (PID: $$) using backend: $WALLPAPER_BACKEND"
+log "Daemon Started (PID: $$)."
 start_maintenance_daemon
 force_check_state "false"
 

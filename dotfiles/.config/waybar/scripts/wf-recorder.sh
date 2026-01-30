@@ -12,7 +12,6 @@ PIDFILE="$STATE_DIR/pid"
 STARTFILE="$STATE_DIR/start"
 SAVEPATH_FILE="$STATE_DIR/save_path"
 MODEFILE="$STATE_DIR/mode"             # full/region -> tooltip
-GIF_MARKER="$STATE_DIR/is_gif"         # [NEW] 标记当前录制是否为 GIF 模式
 TICKPIDFILE="$STATE_DIR/tickpid"
 WAYBAR_PIDS_CACHE="$STATE_DIR/waybar.pids"
 
@@ -33,7 +32,6 @@ mkdir -p "$CONFIG_DIR"
 
 # Hold chosen mode
 MODE_DECIDED=""
-IS_GIF_MODE="false" # [NEW] 临时变量
 
 # ================== Tunables (ENV overridable) ==================
 # defaults — 默认使用 CPU 编码 (libx264)
@@ -41,13 +39,6 @@ _DEFAULT_CODEC="libx264"
 _DEFAULT_FRAMERATE=""
 _DEFAULT_AUDIO="on"
 _DEFAULT_SAVE_EXT="auto"             # auto/mp4/mkv/webm
-
-# --- [NEW] GIF 配置区域 ---
-GIF_WIDTH=720
-GIF_FPS=24
-GIF_DITHER_MODE="bayer:bayer_scale=5"
-GIF_STATS_MODE="diff"
-# -------------------------
 
 # load persisted settings if exist
 codec_from_file=$(cat "$CFG_CODEC" 2>/dev/null || true)
@@ -103,7 +94,6 @@ msg() {
       case "$id" in
         err_wf_not_found) printf "未找到 wf-recorder" ;;
         err_need_slurp)   printf "需要 slurp 以进行区域选择" ;;
-        err_need_ffmpeg)  printf "GIF 转换需要 ffmpeg，但未找到。" ;;
         warn_drm_ignored) printf "警告：DRM_DEVICE=%s 不存在或不可读，将忽略。" "$@" ;;
         warn_invalid_fps) printf "警告：FRAMERATE=\"%s\" 非法，已忽略。" "$@" ;;
         warn_render_unreadable) printf "警告：无效的 render 节点：%s" "$@" ;;
@@ -116,18 +106,14 @@ msg() {
         notif_device_suffix)  printf "（设备 %s）" "$@" ;;
         notif_saved)    printf "已保存：%s" "$@" ;;
         notif_stopped)  printf "已停止录制。" ;;
-        notif_processing_gif) printf "正在转换为 GIF，请稍候..." ;;
-        notif_gif_failed)     printf "GIF 转换失败，保留原视频。" ;;
-        notif_copied)         printf "文件已复制" ;;
         already_running) printf "already running" ;;
         not_running)      printf "not running" ;;
         title_mode)       printf "选择录制模式" ;;
         title_output)     printf "选择输出" ;;
         menu_fullscreen) printf "全屏" ;;
-        menu_region)     printf "选择区域" ;;
-        menu_gif_region) printf "录制 GIF (区域)" ;;
+        menu_region)      printf "选择区域" ;;
         # settings labels -> "标签：值"
-        title_settings)  printf "设置..." ;;
+        title_settings)  printf "设置" ;;
         menu_settings)   printf "设置..." ;;
         menu_set_codec)  printf "编码格式：%s" "$@" ;;
         menu_set_fps)    printf "帧率：%s" "$@" ;;
@@ -153,7 +139,6 @@ msg() {
       case "$id" in
         err_wf_not_found) printf "wf-recorder が見つかりません" ;;
         err_need_slurp)   printf "領域選択には slurp が必要です" ;;
-        err_need_ffmpeg)  printf "GIF変換には ffmpeg が必要ですが、見つかりません。" ;;
         warn_drm_ignored) printf "警告：DRM_DEVICE=%s は無視されます。" "$@" ;;
         warn_invalid_fps) printf "警告：FRAMERATE=\"%s\" は不正です。" "$@" ;;
         warn_render_unreadable) printf "警告：無効なレンダー ノード：%s" "$@" ;;
@@ -166,18 +151,14 @@ msg() {
         notif_device_suffix)  printf "（デバイス %s）" "$@" ;;
         notif_saved)    printf "保存しました：%s" "$@" ;;
         notif_stopped)  printf "録画を停止しました。" ;;
-        notif_processing_gif) printf "GIF に変換中、お待ちください..." ;;
-        notif_gif_failed)     printf "GIF 変換に失敗しました。元の動画を保持します。" ;;
-        notif_copied)         printf "ファイルをコピーしました" ;;
         already_running) printf "already running" ;;
         not_running)      printf "not running" ;;
         title_mode)       printf "録画モードを選択" ;;
         title_output)     printf "出力を選択" ;;
         menu_fullscreen) printf "全画面" ;;
-        menu_region)     printf "領域選択" ;;
-        menu_gif_region) printf "GIF録画 (領域)" ;;
+        menu_region)      printf "領域選択" ;;
         # settings labels -> "ラベル：値"（全角コロン）
-        title_settings)  printf "設定..." ;;
+        title_settings)  printf "設定" ;;
         menu_settings)   printf "設定..." ;;
         menu_set_codec)  printf "コーデック：%s" "$@" ;;
         menu_set_fps)    printf "フレームレート：%s" "$@" ;;
@@ -203,7 +184,6 @@ msg() {
       case "$id" in
         err_wf_not_found) printf "wf-recorder not found" ;;
         err_need_slurp)   printf "slurp required for region selection" ;;
-        err_need_ffmpeg)  printf "ffmpeg is required for GIF conversion but not found." ;;
         warn_drm_ignored) printf "Warning: DRM_DEVICE=%s ignored." "$@" ;;
         warn_invalid_fps) printf "Warning: invalid FRAMERATE=\"%s\"." "$@" ;;
         warn_render_unreadable) printf "Warning: invalid render node: %s" "$@" ;;
@@ -216,18 +196,14 @@ msg() {
         notif_device_suffix)  printf " (device %s)" "$@" ;;
         notif_saved)    printf "Saved: %s" "$@" ;;
         notif_stopped)  printf "Recording stopped." ;;
-        notif_processing_gif) printf "Converting to GIF, please wait..." ;;
-        notif_gif_failed)     printf "GIF conversion failed. Original video kept." ;;
-        notif_copied)         printf "File copied" ;;
         already_running) printf "already running" ;;
         not_running)      printf "not running" ;;
         title_mode)       printf "Select recording mode" ;;
         title_output)     printf "Select output" ;;
         menu_fullscreen) printf "Fullscreen" ;;
-        menu_region)     printf "Region" ;;
-        menu_gif_region) printf "Record GIF (Region)" ;;
+        menu_region)      printf "Region" ;;
         # settings labels -> "Label: Value"
-        title_settings)  printf "Settings..." ;;
+        title_settings)  printf "Settings" ;;
         menu_settings)   printf "Settings..." ;;
         menu_set_codec)  printf "Codec: %s" "$@" ;;
         menu_set_fps)    printf "Framerate: %s" "$@" ;;
@@ -495,20 +471,17 @@ decide_mode() {
     region|area)     MODE_DECIDED="region"; return 0 ;;
     *) ;;
   esac
-  local L_FULL L_REGION L_GIF L_SETTINGS L_EXIT
+  local L_FULL L_REGION L_SETTINGS L_EXIT
   case "$(lang_code)" in
-    zh) L_FULL="$(msg menu_fullscreen)"; L_REGION="$(msg menu_region)"; L_GIF="$(msg menu_gif_region)"; L_SETTINGS="$(msg menu_settings)"; L_EXIT="$(msg menu_exit)";;
-    ja) L_FULL="$(msg menu_fullscreen)"; L_REGION="$(msg menu_region)"; L_GIF="$(msg menu_gif_region)"; L_SETTINGS="$(msg menu_settings)"; L_EXIT="$(msg menu_exit)";;
-    *)  L_FULL="Fullscreen"; L_REGION="Region"; L_GIF="$(msg menu_gif_region)"; L_SETTINGS="$(msg menu_settings)"; L_EXIT="$(msg menu_exit)";;
+    zh) L_FULL="$(msg menu_fullscreen)"; L_REGION="$(msg menu_region)"; L_SETTINGS="$(msg menu_settings)"; L_EXIT="$(msg menu_exit)";;
+    ja) L_FULL="$(msg menu_fullscreen)"; L_REGION="$(msg menu_region)"; L_SETTINGS="$(msg menu_settings)"; L_EXIT="$(msg menu_exit)";;
+    *)  L_FULL="Fullscreen"; L_REGION="Region"; L_SETTINGS="$(msg menu_settings)"; L_EXIT="$(msg menu_exit)";;
   esac
   local title; title="$(msg title_mode)"
   while :; do
-    # ORDER: Fullscreen -> Region -> GIF -> Settings -> Exit
-    # [FIXED] 调整菜单顺序以匹配图片要求：全屏在最前，GIF在区域之后
-    local pick; pick="$(menu_pick "$title" "$L_FULL" "$L_REGION" "$L_GIF" "$L_SETTINGS" "$L_EXIT")" || return 130
-    if    [[ "$pick" == "$L_FULL"   ]]; then MODE_DECIDED="full";    return 0
+    local pick; pick="$(menu_pick "$title" "$L_FULL" "$L_REGION" "$L_SETTINGS" "$L_EXIT")" || return 130
+    if    [[ "$pick" == "$L_FULL"    ]]; then MODE_DECIDED="full";    return 0
     elif [[ "$pick" == "$L_REGION"  ]]; then MODE_DECIDED="region"; return 0
-    elif [[ "$pick" == "$L_GIF"     ]]; then MODE_DECIDED="region"; IS_GIF_MODE="true"; return 0
     elif [[ "$pick" == "$L_SETTINGS" ]]; then show_settings_menu; continue
     elif [[ "$pick" == "$L_EXIT"    ]]; then return 130
     else return 130; fi
@@ -535,21 +508,10 @@ start_rec() {
   has wf-recorder || { echo "$(msg err_wf_not_found)"; exit 1; }
 
   MODE_DECIDED=""
-  IS_GIF_MODE="false"
   if ! decide_mode; then
     echo "$(msg cancel_no_mode)"; emit_waybar_signal; exit 130
   fi
   local mode="$MODE_DECIDED"
-
-  # [NEW] GIF 模式检查
-  if [[ "$IS_GIF_MODE" == "true" ]]; then
-      if ! has ffmpeg; then echo "$(msg err_need_ffmpeg)"; emit_waybar_signal; exit 1; fi
-      # GIF 模式强制使用 mp4 作为中间格式，因为 mp4 兼容性好且编码速度快
-      SAVE_EXT="mp4"
-      touch "$GIF_MARKER"
-  else
-      rm -f "$GIF_MARKER"
-  fi
 
   local marker="" output="" GEOM="" gtok=""
   local -a args
@@ -649,51 +611,10 @@ stop_rec() {
   stop_tick
 
   local save_path=""; [[ -r "$SAVEPATH_FILE" ]] && read -r save_path <"$SAVEPATH_FILE"
-  
-  # --- [NEW] GIF Conversion Logic ---
-  if [[ -f "$GIF_MARKER" ]]; then
-    rm -f "$GIF_MARKER"
-    if [[ -n "$save_path" && -f "$save_path" ]]; then
-        notify "$(msg notif_processing_gif)"
-        
-        # [FIXED] 确保 GIF 目录存在: .../wf-recorder/gif/
-        local gif_dir="$(get_save_dir)/gif"
-        mkdir -p "$gif_dir"
-        
-        local filename=$(basename "$save_path")
-        local gif_out="$gif_dir/${filename%.*}.gif"
-        
-        # 使用您提供的滤镜字符串
-        local filters="fps=$GIF_FPS,scale=$GIF_WIDTH:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=$GIF_STATS_MODE[p];[s1][p]paletteuse=dither=$GIF_DITHER_MODE"
-        
-        # 运行转换，如果成功则删除原文件
-        if ffmpeg -y -v error -i "$save_path" -vf "$filters" "$gif_out"; then
-             rm "$save_path"
-             save_path="$gif_out"
-             # 更新保存路径以便后续通知使用
-             echo "$save_path" > "$SAVEPATH_FILE"
-        else
-             notify "$(msg notif_gif_failed)"
-        fi
-    fi
-  fi
-  # -----------------------------------
-
   if [[ -n "$save_path" && -f "$save_path" ]]; then
     # 生成不带后缀的 latest（例如：.../latest）
     ln -sf "$(basename "$save_path")" "$(dirname "$save_path")/latest" || true
-
-    # --- [NEW] Auto Copy to Clipboard (as File Object) ---
-    local cp_note=""
-    if command -v wl-copy >/dev/null; then
-        # [CRITICAL FIX] 使用 text/uri-list MIME 类型，并添加 file:// 前缀
-        # 这会让剪贴板将其视为一个“文件”，允许在文件管理器或聊天软件中直接粘贴
-        echo "file://${save_path}" | wl-copy --type text/uri-list
-        cp_note=" $(msg notif_copied)"
-    fi
-    # ------------------------------------
-
-    local s; s="$(msg notif_saved "$save_path")${cp_note}"; echo "$s"; notify "$s"
+    local s; s="$(msg notif_saved "$save_path")"; echo "$s"; notify "$s"
   else
     local s; s="$(msg notif_stopped)"; echo "$s"; notify "$s"
   fi
@@ -757,8 +678,8 @@ pretty_status_json() {
     text="$ICON_IDLE"; tooltip="$(tooltip_idle_text)"; class="idle"; alt="idle"
   fi
   printf '{"text":"%s","tooltip":"%s","class":"%s","alt":"%s"}\n' \
-     "$(printf '%s' "$text"    | json_escape)" \
-     "$(printf '%s' "$tooltip" | json_escape)" \
+    "$(printf '%s' "$text"    | json_escape)" \
+    "$(printf '%s' "$tooltip" | json_escape)" \
     "$class" "$alt"
 }
 status_rec() {
@@ -779,13 +700,13 @@ status_rec() {
 
 # ================== Main ==================
 case "${1:-toggle}" in
-  start)          start_rec ;;
-  stop)           stop_rec ;;
-  status)         status_rec ;;
-  status-json)    status_rec --json ;;
-  waybar)         status_rec --json ;;
-  is-active)      if is_running; then exit 0; else exit 1; fi ;;
-  toggle)         is_running && stop_rec || start_rec ;;
-  settings)       show_settings_menu ;;
-  *)              echo "Usage: $0 {start|stop|toggle|status|status-json|waybar|is-active|settings}"; exit 2 ;;
+  start)         start_rec ;;
+  stop)          stop_rec ;;
+  status)        status_rec ;;
+  status-json)   status_rec --json ;;
+  waybar)        status_rec --json ;;
+  is-active)     if is_running; then exit 0; else exit 1; fi ;;
+  toggle)        is_running && stop_rec || start_rec ;;
+  settings)      show_settings_menu ;;
+  *)             echo "Usage: $0 {start|stop|toggle|status|status-json|waybar|is-active|settings}"; exit 2 ;;
 esac

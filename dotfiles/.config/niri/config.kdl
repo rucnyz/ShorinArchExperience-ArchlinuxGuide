@@ -22,6 +22,10 @@ environment {
     //LC_MESSAGES "zh_CN.UTF-8" 让系统全局使用英文，仅主要界面为英文时使用这个环境变量
     // 设置界面语言
     LANG "zh_CN.UTF-8"
+    // 让系统找到 ~/.local/lib 中的库文件（waybar 需要 libcava.so）
+    LD_LIBRARY_PATH "/home/yuzhounie/.local/lib"
+    // SSH agent socket (使用 systemd ssh-agent.socket)
+    SSH_AUTH_SOCK "/run/user/1000/ssh-agent.socket"
     LC_CTYPE "en_US.UTF-8"
     // 输入法环境变量
     XMODIFIERS "@im=fcitx"
@@ -30,7 +34,13 @@ environment {
     // GTK软件使用的渲染器，可以解决n卡双显卡导致的GTK应用启动缓慢问题，AMD或Intel单显卡不需要这行设置可以注释掉
     GSK_RENDERER "gl"
     // 默认文本编辑器
-    EDITOR "vim"
+    EDITOR "micro"
+    // 默认 shell
+    SHELL "/usr/bin/zsh"
+    // JetBrains IDE 需要
+    JAVA_HOME "/usr/lib/jvm/default"
+    // 添加 .local/bin 到 PATH
+    PATH "/home/yuzhounie/.cargo/bin:/home/yuzhounie/.local/bin:/usr/local/bin:/usr/bin:/bin"
 }
 
 // 光标配置
@@ -59,14 +69,16 @@ recent-windows {
         corner-radius 12
     }
 
-	//设置缩略图大小
     previews {
         max-height 480
-        max-scale 0.2
+        max-scale 0.5
     }
 
     binds {
-        // scope可以设置显示的窗口是当前工作区的、还是当前显示器的、或者显示全部窗口
+        // Alt+Tab - 全局所有窗口
+        Alt+Tab         { next-window scope="all"; }
+        Alt+Shift+Tab   { previous-window scope="all"; }
+        // Mod+Tab - 仅当前 workspace
         Mod+Tab         { next-window scope="workspace"; }
         Mod+Shift+Tab   { previous-window scope="workspace"; }
         // grave是波浪键，显示当前应用的所有窗口
@@ -74,8 +86,7 @@ recent-windows {
         Mod+Shift+grave { previous-window filter="app-id"; }
     }
 }
-// 这是include进来的颜色文件，主要设置了窗口边框
-include "colors.kdl"
+// 颜色文件移到 layout 块之后，见文件末尾
 
 input {
     keyboard {
@@ -93,7 +104,7 @@ input {
         }
 
         // Enable numlock on startup, omitting this setting disables it.
-        //numlock
+        numlock
     }
 
     // Next sections include libinput settings.
@@ -147,17 +158,7 @@ input {
 }
 
 
-overview {
-	// 关闭overview里的工作区阴影，配合layout里面的透明工作区背景可以做到让工作区和overview共用同一个背景。在意内存占用的可以把waypaper的后端改成swaybg,然后关闭桌面自动模糊功能，取消swww自动启动，能节省250MB左右内存
-	workspace-shadow {
-	//off
-	}
-	//缩放
-	zoom 0.5
-}
 layout {
-    //设置工作区背景颜色
-    //background-color "transparent"
     // Set gaps around windows in logical pixels.
     // 窗口和窗口之间的间距
     gaps 12
@@ -208,7 +209,7 @@ layout {
         // Uncomment this line to disable the focus ring.
         // off
         // How many logical pixels the ring extends out from the windows.
-        width 3
+        width 5
 
         // Colors can be set in a variety of ways:
         // - CSS named colors: "red"
@@ -324,13 +325,13 @@ layout {
 // 桌面壁纸的守护进程
 spawn-at-startup "swww-daemon"
 // 总览界面背景壁纸的守护进程
-spawn-at-startup "swww-daemon" "-n" "overview"
+spawn-sh-at-startup "swww-daemon -n overview"
 // 随机更换一张壁纸
 spawn-at-startup "waypaper" "--random"
-// 恢复壁纸
-//spawn-at-startup "waypaper" "--restore"
 // 询问管理员权限功能（身份验证）
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+// GNOME Keyring 自动解锁
+spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 // 有聚焦窗口时桌面自动模糊的脚本
 spawn-at-startup "~/.config/scripts/niri_auto_blur_bg.sh"
 // 屏幕分享、录屏相关的环境设置
@@ -340,21 +341,27 @@ spawn-sh-at-startup "systemctl --user set-environment XDG_SESSION_CLASS=user"
 // 通知程序
 spawn-at-startup "mako"
 // 任务栏
-spawn-at-startup "waybar"
+spawn-sh-at-startup "waybar -c $HOME/.config/waybar-niri-Win11Like/config.jsonc -s $HOME/.config/waybar-niri-Win11Like/style.css"
 // 输入法
-spawn-at-startup "fcitx5" 
-// 剪贴板守护进程
-spawn-at-startup "clipse" "--listen" 
-// wayland-->x11剪贴板同步
-spawn-at-startup "wl-paste" "--watch" "xclip" "-selection" "clipboard"
-// x11-->wayland剪贴板同步
-spawn-at-startup "~/.local/bin/clipsync-x2w"
+spawn-at-startup "fcitx5"
+// 蓝牙托盘图标（blueman）
+spawn-at-startup "blueman-applet" 
+// 剪贴板历史由 vicinae 管理 
 // 闲置时自动熄屏锁屏休眠的脚本
 spawn-at-startup "~/.config/niri/scripts/swayidle.sh"
 // 大写锁定键的osd显示
 spawn-at-startup "swayosd-server"
 // alt+tab切换器（这是一个第三方，无缩略图显示的切换器）
-//spawn-at-startup "niriswitcher"
+// spawn-at-startup "niriswitcher"
+// 同步工具托盘图标（延迟启动等待托盘准备好）
+spawn-sh-at-startup "sleep 3 && syncthingtray qt-widgets-gui --single-instance --wait"
+// 启动器
+spawn-at-startup "vicinae" "server"
+// 会话管理器（保存和恢复窗口布局）
+// 日志输出到 /tmp/nirinit.log
+spawn-sh-at-startup "nirinit --debug --save-interval 1200 > /tmp/nirinit.log 2>&1"
+// 窗口焦点切换时边框闪烁
+spawn-at-startup "~/.config/niri/scripts/focus-flash.sh"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -378,3 +385,6 @@ prefer-no-csd
 
 
 
+
+// 这是include进来的颜色文件，放在最后以便覆盖 layout 中的设置
+include "colors.kdl"

@@ -1,20 +1,20 @@
 :root {
   /* 背景 */
-  --bg-color: rgba(37, 29, 33, 1);
+  --bg-color: rgba(255, 249, 238, 0.95);
   /* 标题颜色 */
-  --label-color: rgba(238, 223, 227, 1);
+  --label-color: rgba(30, 27, 19, 1);
   /* 右上角显示器标签文字的颜色 */
-  --alternate-label-color: rgba(253, 217, 231, 1);
+  --alternate-label-color: rgba(33, 27, 4, 1);
   /* 不知道是啥 */
   --dim-label-color: rgb(142, 142, 147);
   /* 边框 */
-  --border-color: rgba(157, 141, 146, 1);
+  --border-color: rgba(124, 119, 103, 1);
   /* 选中窗口的背景高亮和右上角显示器标签背景的颜色 */
-  --highlight-color: rgba(109, 51, 81, 1);
+  --highlight-color: rgba(255, 249, 238, 0.8);
   /* 不知道是啥 */
-  --urgency-color: rgba(255, 180, 171, 1);
+  --urgency-color: rgba(186, 26, 26, 1);
   /* 左边显示的当前工作区的指示器的颜色 */
-  --indicator-focus-color: rgba(254, 176, 211, 1);
+  --indicator-focus-color: rgba(110, 94, 14, 0.95);
   /* 非当前工作区指示器的颜色 */
   --indicator-color: rgba(58, 58, 60, .95);
 }

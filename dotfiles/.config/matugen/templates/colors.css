@@ -5,3 +5,9 @@
 <* for name, value in colors *>
     @define-color {{name}} {{value.default.hex}};
 <* endfor *>
+
+<* if {{ is_dark_mode }} *>
+    @define-color workspace_fg {{colors.tertiary_container.default.hex}};
+<* else *>
+    @define-color workspace_fg {{colors.on_surface.default.hex}};
+<* endif *>
