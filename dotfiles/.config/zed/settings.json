@@ -1,0 +1,135 @@
+{
+  "edit_predictions": {
+    "disabled_globs": [],
+  },
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+    "**/.classpath",
+    "**/vendor",
+    "**/node_modules",
+    "**/__pycache__",
+  ],
+  "context_servers": {
+    "mcp-server-github": {
+      "enabled": true,
+      "settings": {
+        "github_personal_access_token": "",
+      },
+    },
+  },
+  "agent": {
+    "default_model": {
+      "provider": "zed.dev",
+      "model": "claude-opus-4-5",
+    },
+    "model_parameters": [],
+  },
+  "features": {
+    "edit_prediction_provider": "zed",
+  },
+  "agent_buffer_font_size": 21.0,
+  "agent_ui_font_size": 20.0,
+  "ui_font_weight": 500.0,
+  "ssh_connections": [
+    {
+      "host": "mass_h200",
+      "args": [],
+      "projects": [
+        {
+          "paths": ["/scratch/yuzhou"],
+        },
+        {
+          "paths": ["/scratch/yuzhou/projects"],
+        },
+        {
+          "paths": ["/scratch/yuzhou/projects/aigise/./"],
+        },
+      ],
+    },
+    {
+      "host": "surfi1",
+      "args": [],
+      "projects": [
+        {
+          "paths": ["/scr/rucnyz"],
+        },
+        {
+          "paths": ["/scr/rucnyz/projects/virtue_test/./"],
+        },
+      ],
+    },
+  ],
+  "restore_on_startup": "last_session",
+  "session": {
+    "restore_unsaved_buffers": true,
+  },
+  "ui_font_family": "JetBrainsMonoNL Nerd Font",
+  "ui_font_fallbacks": ["Source Han Sans CN"],
+  "icon_theme": {
+    "mode": "system",
+    "light": "JetBrains New UI Icons (Light)",
+    "dark": "Zed (Default)",
+  },
+  "terminal": {
+    "shell": "system",
+    "font_family": "JetBrainsMonoNL Nerd Font",
+    "font_fallbacks": ["Source Han Sans CN"],
+  },
+  "buffer_font_family": "JetBrainsMonoNL Nerd Font",
+  "buffer_font_fallbacks": ["Source Han Sans CN"],
+  "show_edit_predictions": true,
+  "soft_wrap": "editor_width",
+  "base_keymap": "JetBrains",
+  "ui_font_size": 20.0,
+  "buffer_font_size": 20.0,
+  "buffer_font_weight": 500,
+  "theme": {
+    "mode": "light",
+    "light": "JetBrains Light",
+    "dark": "One Dark",
+  },
+  "theme_overrides": {
+    "Solarized Light": {
+      "text": "#002b36",
+      "text.muted": "#073642",
+      "text.accent": "#268bd2",
+      "ignored": "#b58900",
+      "version_control.ignored": "#b58900",
+      "created": "#dc322f",
+      "version_control.added": "#859900",
+      "modified": "#268bd2",
+      "version_control.modified": "#268bd2",
+      "syntax": {
+        "comment": {
+          "color": "#dc322f"
+        },
+        "comment.doc": {
+          "color": "#dc322f"
+        }
+      }
+    },
+    "JetBrains Light": {
+      "created": "#ff0000",
+      "ignored": "#b8860b",
+      "version_control.ignored": "#b8860b",
+      "editor.background": "#fdf6e3",
+      "editor.active_line.background": "#eee8d5",
+      "editor.gutter.background": "#fdf6e3",
+      "editor.line_number": "#93a1a1",
+      "editor.active_line_number": "#657b83",
+      "syntax": {
+        "comment": {
+          "color": "#ff0000"
+        },
+        "comment.doc": {
+          "color": "#ff0000"
+        }
+      }
+    }
+  },
+}

@@ -1,0 +1,28 @@
+# nirinit 配置文件
+
+[skip]
+# 跳过这些应用的恢复（启动器、托盘等不需要恢复）
+apps = ["fuzzel", "vicinae", "niriswitcher"]
+
+[launch]
+# app_id 到启动命令的映射
+# Slack app_id 是大写的
+"Slack" = "slack"
+# Edge 需要缩放参数
+"microsoft-edge" = "microsoft-edge-stable --force-device-scale-factor=1.1"
+# Thunderbird 需要 DPI 设置
+"thunderbird" = "GDK_DPI_SCALE=1.0 thunderbird"
+# PyCharm 通过 Toolbox 安装
+"jetbrains-pycharm" = "/home/yuzhounie/.local/share/JetBrains/Toolbox/apps/pycharm/bin/pycharm"
+"jetbrains-rustrover" = "/home/yuzhounie/.local/share/JetBrains/Toolbox/apps/rustrover/bin/rustrover"
+# Nautilus 需要环境变量
+"org.gnome.Nautilus" = "env GSK_RENDERER=gl GTK_IM_MODULE=fcitx nautilus"
+# Cursor app_id 是大写的
+"Cursor" = "cursor"
+# Zed app_id 是 dev.zed.Zed
+"dev.zed.Zed" = "zed"
+# Termius app_id 是大写的
+"Termius" = "termius"
+# Devora project manager
+"devora" = "devora"
+# kitty: 本地 tmux 会话不会恢复（由 tmux-continuum 处理），远程 SSH tmux 会话会自动通过 autossh 恢复

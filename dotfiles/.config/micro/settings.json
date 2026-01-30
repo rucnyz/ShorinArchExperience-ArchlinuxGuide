@@ -1,0 +1,10 @@
+{
+    "autosu": true,
+    "colorscheme": "simple",
+    "savecursor": true,
+    "saveundo": true,
+    "scrollbar": false,
+    "softwrap": true,
+    "tabsize": 4,
+    "tabstospaces": true
+}

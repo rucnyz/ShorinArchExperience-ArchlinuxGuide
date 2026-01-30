@@ -1,0 +1,65 @@
+[
+  {
+    "bindings": {
+      "shift shift": null,
+    },
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {},
+  },
+  {
+    "context": "(Editor)",
+    "bindings": {
+      "ctrl-.": "agent::AddSelectionToThread",
+    },
+  },
+  {
+    "context": "(AgentPanel && acp_thread)",
+    "bindings": {
+      "ctrl-9": "agent::NewThread",
+    },
+  },
+  {
+    "context": "AgentPanel",
+    "bindings": {
+      "ctrl-9": "agent::NewThread",
+    },
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "ctrl-3": "editor::ToggleCodeActions",
+    },
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-1": "terminal_panel::Toggle",
+    },
+  },
+  {
+    "context": "(Editor && edit_prediction)",
+    "bindings": {
+      "ctrl-tab": "editor::AcceptEditPrediction",
+    },
+  },
+  {
+    "context": "(Editor && edit_prediction_conflict)",
+    "bindings": {
+      "ctrl-tab": "editor::AcceptEditPrediction",
+    },
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "alt-q": "tab_switcher::Toggle",
+    },
+  },
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-9": "agent::ToggleFocus",
+    },
+  },
+]

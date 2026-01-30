@@ -1,0 +1,6 @@
+[filesystem "JetBrains s.r.o.|21.0.9|/dev/nvme0n1p6"]
+	timestampResolution = 4206 nanoseconds
+	minRacyThreshold = 0 nanoseconds
+[filesystem "Arch Linux|25.0.2|/dev/nvme0n1p6"]
+	timestampResolution = 3304 nanoseconds
+	minRacyThreshold = 0 nanoseconds

@@ -1,0 +1,12 @@
+
+# Sensitive / temp files
+dotfiles/.config/gh/hosts.yml
+dotfiles/.config/go/telemetry/
+dotfiles/.config/micro/buffers/
+dotfiles/.config/fcitx/dbus/
+dotfiles/.config/**/Cache/
+dotfiles/.config/**/CachedData/
+dotfiles/.config/**/*.log
+dotfiles/.config/**/*.token
+*.bak
+dotfiles/.config/zed/settings.json.bak
