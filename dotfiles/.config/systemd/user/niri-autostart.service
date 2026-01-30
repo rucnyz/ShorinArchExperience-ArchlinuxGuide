@@ -1,0 +1,8 @@
+[Unit]
+Description=Niri Session Autostart
+After=graphical-session-pre.target
+[Service]
+ExecStart=/usr/bin/niri-session
+Restart=on-failure
+[Install]
+WantedBy=default.target

@@ -10,3 +10,4 @@ dotfiles/.config/**/*.log
 dotfiles/.config/**/*.token
 *.bak
 dotfiles/.config/zed/settings.json.bak
+dotfiles/.config/opencode/antigravity-accounts.json
